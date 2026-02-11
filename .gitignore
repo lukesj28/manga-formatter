@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Environment Variables
+.env
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Project Specific
+input/*
+!input/.gitkeep
+output/*
+manga_fmt_*
+
+# Generated Files
+*.cbz
+*.zip
+*.xtc

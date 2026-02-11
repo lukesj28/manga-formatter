@@ -1,0 +1,14 @@
+services:
+  manga-formatter:
+    build: .
+    ports:
+      - "5888:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - manga_tmp:/tmp
+      - ./input:/manga/input
+    restart: unless-stopped
+
+volumes:
+  manga_tmp:

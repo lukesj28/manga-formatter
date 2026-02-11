@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Formatter — CBZ to XTC</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Manga Formatter</h1>
+            <p class="subtitle">Convert CBZ manga to XTC format</p>
+        </header>
+
+        <!-- Phase 1: Main Form -->
+        <form id="convertForm" enctype="multipart/form-data">
+            <!-- Title -->
+            <div class="form-group">
+                <label for="title">Manga Title</label>
+                <input type="text" id="title" name="title" placeholder="e.g. Hunter X Hunter" required>
+            </div>
+
+            <!-- Source Mode Toggle -->
+            <div class="form-group">
+                <label>Source</label>
+                <div class="source-toggle">
+                    <button type="button" class="source-btn" data-mode="upload">📤 Upload Files</button>
+                    <button type="button" class="source-btn active" data-mode="hostdir">📂 Host Directory</button>
+                </div>
+            </div>
+
+            <!-- Upload Zone (shown in upload mode) -->
+            <div class="form-group" id="uploadSection" style="display:none;">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-content">
+                        <span class="drop-icon">📁</span>
+                        <p>Drag & drop CBZ files here</p>
+                        <p class="drop-hint">or click to browse</p>
+                    </div>
+                    <input type="file" id="cbzFiles" name="cbz_files" multiple accept=".cbz" class="file-input">
+                </div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- Host Dir Section (shown in hostdir mode) -->
+            <div class="form-group" id="hostDirSection">
+                <label for="hostPath">Directory Path</label>
+                <div class="host-dir-row">
+                    <input type="text" id="hostPath" name="host_path" placeholder="/manga/input">
+                    <button type="button" id="scanBtn" class="btn-scan">Scan</button>
+                </div>
+                <div class="file-list" id="hostFileList"></div>
+                <div class="scan-status" id="scanStatus" style="display:none;"></div>
+            </div>
+
+            <!-- Settings -->
+            <details class="settings-panel">
+                <summary>⚙️ Conversion Settings</summary>
+                <div class="settings-grid">
+                    <div class="setting">
+                        <label for="dithering">Dithering</label>
+                        <div class="toggle-wrap">
+                            <input type="checkbox" id="dithering" name="dithering" checked>
+                            <label for="dithering" class="toggle"></label>
+                            <span class="toggle-label" id="ditherLabel">ON</span>
+                        </div>
+                    </div>
+
+                    <div class="setting">
+                        <label for="contrast">Contrast <span id="contrastVal" class="badge">4</span></label>
+                        <input type="range" id="contrast" name="contrast" min="0" max="8" value="4">
+                    </div>
+
+                    <div class="setting">
+                        <label for="target_width">Width (px)</label>
+                        <input type="number" id="target_width" name="target_width" value="480" min="100" max="2000">
+                    </div>
+
+                    <div class="setting">
+                        <label for="target_height">Height (px)</label>
+                        <input type="number" id="target_height" name="target_height" value="800" min="100" max="2000">
+                    </div>
+                </div>
+            </details>
+
+            <!-- Submit -->
+            <button type="submit" id="submitBtn" class="btn-primary" disabled>
+                <span class="btn-text">Convert & Download</span>
+                <span class="btn-loading" style="display:none;">
+                    <span class="spinner"></span> Converting…
+                </span>
+            </button>
+        </form>
+
+        <!-- Phase 2: Review Panel (hidden initially) -->
+        <div class="review-panel" id="reviewPanel" style="display:none;">
+            <h2>📋 Manual Chapter Assignment</h2>
+            <p class="review-intro">The following files couldn't be auto-assigned chapter numbers. Please review and
+                assign them.</p>
+
+            <div class="recognized-summary" id="recognizedSummary"></div>
+
+            <div class="review-grid" id="reviewGrid"></div>
+
+            <button type="button" id="continueBtn" class="btn-primary">
+                <span class="btn-text">Continue & Download</span>
+                <span class="btn-loading" style="display:none;">
+                    <span class="spinner"></span> Processing…
+                </span>
+            </button>
+        </div>
+
+        <!-- Progress / Status -->
+        <div class="status-bar" id="statusBar" style="display:none;">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="status-text" id="statusText">Processing…</p>
+        </div>
+
+        <!-- Error -->
+        <div class="error-msg" id="errorMsg" style="display:none;"></div>
+    </div>
+
+    <script>
+        // --- DOM refs ---
+        const form = document.getElementById('convertForm');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('cbzFiles');
+        const fileList = document.getElementById('fileList');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusBar = document.getElementById('statusBar');
+        const statusText = document.getElementById('statusText');
+        const progressFill = document.getElementById('progressFill');
+        const errorMsg = document.getElementById('errorMsg');
+        const contrastSlider = document.getElementById('contrast');
+        const contrastVal = document.getElementById('contrastVal');
+        const ditherToggle = document.getElementById('dithering');
+        const ditherLabel = document.getElementById('ditherLabel');
+        const uploadSection = document.getElementById('uploadSection');
+        const hostDirSection = document.getElementById('hostDirSection');
+        const hostPathInput = document.getElementById('hostPath');
+        const scanBtn = document.getElementById('scanBtn');
+        const hostFileList = document.getElementById('hostFileList');
+        const scanStatus = document.getElementById('scanStatus');
+        const reviewPanel = document.getElementById('reviewPanel');
+        const reviewGrid = document.getElementById('reviewGrid');
+        const recognizedSummary = document.getElementById('recognizedSummary');
+        const continueBtn = document.getElementById('continueBtn');
+
+        let sourceMode = 'hostdir';
+        let hostFilesFound = false;
+
+        // --- Source Mode Toggle ---
+        document.querySelectorAll('.source-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                sourceMode = btn.dataset.mode;
+
+                if (sourceMode === 'upload') {
+                    uploadSection.style.display = '';
+                    hostDirSection.style.display = 'none';
+                    updateSubmitState();
+                } else {
+                    uploadSection.style.display = 'none';
+                    hostDirSection.style.display = '';
+                    updateSubmitState();
+                }
+            });
+        });
+
+        // --- Drop Zone (FIXED: no duplicate click handler) ---
+        // The <input type="file"> already covers the drop zone via CSS,
+        // so we only need drag-and-drop handlers.
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            fileInput.files = e.dataTransfer.files;
+            updateFileList();
+        });
+        fileInput.addEventListener('change', updateFileList);
+
+        function updateFileList() {
+            fileList.innerHTML = '';
+            const files = fileInput.files;
+            if (files.length === 0) {
+                updateSubmitState();
+                return;
+            }
+            for (const f of files) {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                const sizeMB = (f.size / 1024 / 1024).toFixed(1);
+                div.innerHTML = `<span class="file-name">📄 ${f.name}</span><span class="file-size">${sizeMB} MB</span>`;
+                fileList.appendChild(div);
+            }
+            updateSubmitState();
+        }
+
+        function updateSubmitState() {
+            if (sourceMode === 'upload') {
+                submitBtn.disabled = !fileInput.files.length;
+            } else {
+                submitBtn.disabled = !hostFilesFound;
+            }
+        }
+
+        // --- Scan Host Directory ---
+        scanBtn.addEventListener('click', async () => {
+            const path = hostPathInput.value.trim();
+            if (!path) { showError('Please enter a directory path.'); return; }
+
+            scanBtn.disabled = true;
+            scanBtn.textContent = 'Scanning…';
+            scanStatus.style.display = 'none';
+            hostFileList.innerHTML = '';
+            errorMsg.style.display = 'none';
+            hostFilesFound = false;
+
+            try {
+                const resp = await fetch(`/scan?path=${encodeURIComponent(path)}`);
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    showError(data.error || 'Scan failed');
+                    return;
+                }
+
+                scanStatus.style.display = 'block';
+                scanStatus.textContent = `Found ${data.count} CBZ file${data.count !== 1 ? 's' : ''}`;
+                scanStatus.className = 'scan-status scan-success';
+
+                for (const f of data.files) {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `<span class="file-name">📄 ${f}</span>`;
+                    hostFileList.appendChild(div);
+                }
+
+                hostFilesFound = true;
+                updateSubmitState();
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.textContent = 'Scan';
+            }
+        });
+
+        // --- Settings ---
+        contrastSlider.addEventListener('input', () => { contrastVal.textContent = contrastSlider.value; });
+        ditherToggle.addEventListener('change', () => { ditherLabel.textContent = ditherToggle.checked ? 'ON' : 'OFF'; });
+
+        // --- Form Submit ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+
+            const title = document.getElementById('title').value.trim();
+            if (!title) { showError('Please enter a manga title.'); return; }
+
+            if (sourceMode === 'upload' && !fileInput.files.length) {
+                showError('Please select CBZ files.'); return;
+            }
+            if (sourceMode === 'hostdir' && !hostFilesFound) {
+                showError('Please scan a host directory first.'); return;
+            }
+
+            // Build form data
+            const fd = new FormData();
+            fd.append('title', title);
+            fd.append('source_mode', sourceMode);
+            fd.append('dithering', ditherToggle.checked ? 'true' : 'false');
+            fd.append('contrast', contrastSlider.value);
+            fd.append('target_width', document.getElementById('target_width').value);
+            fd.append('target_height', document.getElementById('target_height').value);
+
+            if (sourceMode === 'upload') {
+                for (const f of fileInput.files) {
+                    fd.append('cbz_files', f);
+                }
+            } else {
+                fd.append('host_path', hostPathInput.value.trim());
+            }
+
+            setLoading(true);
+
+            try {
+                const resp = await fetch('/convert', { method: 'POST', body: fd });
+
+                const contentType = resp.headers.get('content-type') || '';
+
+                if (contentType.includes('application/json')) {
+                    const data = await resp.json();
+
+                    if (!resp.ok) {
+                        throw new Error(data.error || 'Conversion failed');
+                    }
+
+                    if (data.status === 'needs_review') {
+                        // Show review panel
+                        showReviewPanel(data);
+                        setLoading(false);
+                        form.style.display = 'none';
+                        return;
+                    }
+                } else if (resp.ok) {
+                    // Direct download
+                    await triggerDownload(resp, title);
+                    statusText.textContent = '✅ Done! Your download should start automatically.';
+                    progressFill.classList.remove('indeterminate');
+                    progressFill.style.width = '100%';
+                    return;
+                } else {
+                    throw new Error('Conversion failed');
+                }
+
+            } catch (err) {
+                showError(err.message);
+                statusBar.style.display = 'none';
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // --- Review Panel ---
+        function showReviewPanel(data) {
+            reviewPanel.style.display = '';
+
+            if (data.recognized_count > 0) {
+                recognizedSummary.innerHTML =
+                    `<p class="recognized-info">✅ <strong>${data.recognized_count}</strong> chapter${data.recognized_count !== 1 ? 's' : ''} auto-recognized: ${data.recognized_chapters.join(', ')}</p>`;
+            } else {
+                recognizedSummary.innerHTML = '<p class="recognized-info">No chapters were auto-recognized.</p>';
+            }
+
+            reviewGrid.innerHTML = '';
+            for (const item of data.unrecognized) {
+                const card = document.createElement('div');
+                card.className = 'review-card';
+                card.innerHTML = `
+                    <img src="${item.preview_url}" alt="${item.filename}" class="review-thumb" loading="lazy">
+                    <div class="review-info">
+                        <span class="review-filename">${item.filename}</span>
+                        <div class="review-input-wrap">
+                            <label>Chapter #</label>
+                            <input type="number" class="review-chapter-input" data-filename="${item.filename}" min="1" placeholder="e.g. 5">
+                        </div>
+                    </div>
+                `;
+                reviewGrid.appendChild(card);
+            }
+
+            // Store session ID
+            reviewPanel.dataset.sessionId = data.session_id;
+        }
+
+        // --- Continue Button ---
+        continueBtn.addEventListener('click', async () => {
+            const sessionId = reviewPanel.dataset.sessionId;
+            const inputs = reviewGrid.querySelectorAll('.review-chapter-input');
+            const assignments = {};
+            let valid = true;
+
+            for (const inp of inputs) {
+                const val = inp.value.trim();
+                if (!val) {
+                    inp.classList.add('input-error');
+                    valid = false;
+                } else {
+                    inp.classList.remove('input-error');
+                    assignments[inp.dataset.filename] = parseInt(val, 10);
+                }
+            }
+
+            if (!valid) {
+                showError('Please assign a chapter number to all files.');
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            continueBtn.querySelector('.btn-text').style.display = 'none';
+            continueBtn.querySelector('.btn-loading').style.display = 'inline-flex';
+            continueBtn.disabled = true;
+            statusBar.style.display = 'block';
+            statusText.textContent = 'Processing remaining chapters…';
+            progressFill.style.width = '100%';
+            progressFill.classList.add('indeterminate');
+
+            try {
+                const resp = await fetch('/convert/continue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, assignments }),
+                });
+
+                const contentType = resp.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const data = await resp.json();
+                    throw new Error(data.error || 'Continuation failed');
+                }
+
+                if (resp.ok) {
+                    const title = document.getElementById('title').value.trim();
+                    await triggerDownload(resp, title);
+                    statusText.textContent = '✅ Done! Your download should start automatically.';
+                    progressFill.classList.remove('indeterminate');
+                    progressFill.style.width = '100%';
+                } else {
+                    throw new Error('Download failed');
+                }
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                continueBtn.querySelector('.btn-text').style.display = 'inline';
+                continueBtn.querySelector('.btn-loading').style.display = 'none';
+                continueBtn.disabled = false;
+            }
+        });
+
+        // --- Helpers ---
+        async function triggerDownload(resp, title) {
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function setLoading(on) {
+            if (on) {
+                submitBtn.querySelector('.btn-text').style.display = 'none';
+                submitBtn.querySelector('.btn-loading').style.display = 'inline-flex';
+                submitBtn.disabled = true;
+                statusBar.style.display = 'block';
+                statusText.textContent = 'Uploading & converting… this may take a while.';
+                progressFill.style.width = '100%';
+                progressFill.classList.add('indeterminate');
+            } else {
+                submitBtn.querySelector('.btn-text').style.display = 'inline';
+                submitBtn.querySelector('.btn-loading').style.display = 'none';
+                submitBtn.disabled = false;
+                progressFill.classList.remove('indeterminate');
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>
