@@ -1,289 +1,907 @@
 {% extends "base.html" %}
 
-{% block title %}X4 Utils — E-Ink Toolkit{% endblock %}
+{% block title %}X4 Hub{% endblock %}
 
 {% block back_button %}{% endblock %}
 
 {% block styles %}
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Cinzel:wght@400;600;700&family=Share+Tech+Mono&family=Playfair+Display:wght@600;700&family=Bangers&display=swap" rel="stylesheet">
 <style>
-    .home-wrap {
-        width: 100%;
-        max-width: 640px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    /* ===== E-Ink Simulated Screen ===== */
+
+    .eink-page {
+        background: #e5e1db;
+        min-height: 100vh;
+        position: relative;
     }
 
-    /* ---- Hero ---- */
-    .hero {
+    .eink-page::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background:
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E") repeat,
+            repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.006) 2px, rgba(0,0,0,0.006) 3px);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .hub-wrap {
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ===== Header ===== */
+
+    .hub-header {
+        margin-bottom: 2.5rem;
         text-align: center;
-        margin-bottom: 3rem;
-        position: relative;
+        padding-bottom: 1.5rem;
     }
 
-    .hero-title {
-        font-family: var(--font-heading);
-        font-size: 5rem;
-        letter-spacing: 4px;
+    .hub-header::after {
+        content: '';
+        display: block;
+        width: 80px;
+        height: 2px;
+        margin: 1rem auto 0;
+        background: #1a1a1a;
+        border-radius: 1px;
+    }
+
+    .hub-title {
+        font-family: 'Literata', serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0a0a0a;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        color: var(--secondary);
-        -webkit-text-stroke: 2px #000;
-        text-shadow: 5px 5px 0 #000, 6px 6px 0 var(--accent);
-        transform: rotate(-3deg);
-        display: inline-block;
-        line-height: 1;
     }
 
-    .hero-title span {
-        display: inline-block;
+    .hub-subtitle {
+        font-family: 'Literata', serif;
+        font-weight: 400;
+        color: #555;
+        font-size: 0.95rem;
+        margin-top: 0.4rem;
     }
 
-    .hero-sub {
-        font-family: var(--font-heading);
-        font-size: 1.15rem;
-        color: var(--text);
-        background: var(--accent);
-        border: var(--border-width) solid var(--border-color);
-        box-shadow: var(--shadow-offset) var(--shadow-offset) 0 #000;
-        display: inline-block;
-        padding: 0.3rem 1rem;
-        transform: rotate(1.5deg);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 0.75rem;
-    }
+    /* ===== Single-column stack ===== */
 
-    /* ---- Cards Grid ---- */
-    .cards {
+    .cards-stack {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
-        width: 100%;
+        gap: 1.5rem;
     }
 
-    /* ---- Card ---- */
-    .card {
-        display: flex;
-        align-items: stretch;
-        background: var(--surface);
-        border: var(--border-width) solid var(--border-color);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-offset) var(--shadow-offset) 0 #000;
-        overflow: hidden;
-        text-decoration: none;
-        color: var(--text);
-        transition: transform 0.15s, box-shadow 0.15s;
+    .portal-card {
+        display: block;
         position: relative;
-        /* Animation applied via classes */
+        overflow: hidden;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .card:hover {
-        transform: translate(-3px, -3px);
-        box-shadow: calc(var(--shadow-offset) + 3px) calc(var(--shadow-offset) + 3px) 0 #000;
+    .portal-card:hover { transform: translateY(-3px); }
+
+    .portal-title {
+        position: relative;
+        z-index: 5;
+        display: block;
     }
 
-    .card:active {
-        transform: translate(0, 0);
-        box-shadow: 0 0 0 #000;
+    /* =========================================================
+       CARD 1 — BOOK CONVERTER  (Fantasy / Magic)
+       Scroll-shaped with arcane circle and floating potion
+       ========================================================= */
+
+    .card-fantasy {
+        background: linear-gradient(160deg, #1a0a2e 0%, #2d1b69 50%, #1a0a2e 100%);
+        border-radius: 30px / 50%;
+        border: 1px solid rgba(180,150,255,0.12);
+        padding: 2.2rem 2rem;
+        box-shadow: 0 4px 24px rgba(30,10,60,0.45);
+        text-align: center;
     }
 
-    .card--disabled {
+    .card-fantasy:hover {
+        box-shadow: 0 8px 36px rgba(30,10,60,0.55), 0 0 50px rgba(150,120,255,0.08);
+    }
+
+    .card-fantasy .portal-title {
+        font-family: 'Cinzel', serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #e0d4ff;
+        text-shadow: 0 0 24px rgba(150,120,255,0.3);
+    }
+
+    /* Arcane circle */
+    .arcane-circle {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 200px;
+        height: 200px;
+        transform: translate(-50%, -50%);
+        border: 1px solid rgba(180,150,255,0.08);
+        border-radius: 50%;
+        animation: arcSpin 40s linear infinite;
         pointer-events: none;
     }
 
-    .card--disabled .card-body {
-        opacity: 0.45;
+    .arcane-circle::before {
+        content: '';
+        position: absolute;
+        inset: 18px;
+        border: 1px solid rgba(180,150,255,0.07);
+        border-radius: 50%;
     }
 
-    /* Icon strip on left */
-    .card-icon {
-        width: 72px;
-        min-height: 88px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        border-right: var(--border-width) solid var(--border-color);
-        flex-shrink: 0;
+    .arcane-circle::after {
+        content: '';
+        position: absolute;
+        inset: 36px;
+        border: 1px dashed rgba(180,150,255,0.06);
+        border-radius: 50%;
+    }
+
+    @keyframes arcSpin {
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Rune marks around circle */
+    .rune {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border: 1px solid rgba(180,150,255,0.12);
+        pointer-events: none;
+    }
+
+    .rune:nth-child(2) { top: 8px; left: 50%; transform: translateX(-50%) rotate(45deg); }
+    .rune:nth-child(3) { bottom: 8px; left: 50%; transform: translateX(-50%) rotate(45deg); }
+    .rune:nth-child(4) { left: 20px; top: 50%; transform: translateY(-50%) rotate(45deg); }
+    .rune:nth-child(5) { right: 20px; top: 50%; transform: translateY(-50%) rotate(45deg); }
+
+    /* Potion bottle (right side) */
+    .potion {
+        position: absolute;
+        right: 35px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .potion-neck {
+        width: 8px;
+        height: 12px;
+        background: rgba(180,150,255,0.12);
+        margin: 0 auto;
+        border-radius: 2px 2px 0 0;
+    }
+
+    .potion-body {
+        width: 22px;
+        height: 26px;
+        background: linear-gradient(180deg, rgba(120,80,220,0.18) 0%, rgba(180,150,255,0.08) 100%);
+        border: 1px solid rgba(180,150,255,0.12);
+        border-radius: 4px 4px 8px 8px;
+        margin: 0 auto;
         position: relative;
     }
 
-    .card-icon svg {
-        width: 32px;
-        height: 32px;
+    /* Bubbles in potion */
+    .potion-bubble {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border: 1px solid rgba(200,180,255,0.2);
+        border-radius: 50%;
+        animation: bubbleUp 2.5s ease-in-out infinite;
     }
 
-    .card:nth-child(1) .card-icon { background: var(--secondary); color: #000; }
-    .card:nth-child(2) .card-icon { background: var(--accent); color: #fff; }
-    .card:nth-child(3) .card-icon { background: #ffc107; color: #000; }
+    .potion-bubble:nth-child(1) { left: 4px; bottom: 4px; animation-delay: 0s; }
+    .potion-bubble:nth-child(2) { left: 10px; bottom: 6px; animation-delay: 0.8s; }
+    .potion-bubble:nth-child(3) { left: 7px; bottom: 2px; animation-delay: 1.6s; }
 
-    /* Body */
-    .card-body {
-        flex: 1;
-        padding: 1rem 1.25rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 0.2rem;
+    @keyframes bubbleUp {
+        0%, 100% { transform: translateY(0); opacity: 0; }
+        30% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { transform: translateY(-14px); opacity: 0; }
     }
 
-    .card-title {
-        font-family: var(--font-heading);
-        font-size: 1.6rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--text);
-        text-shadow: 1px 1px 0 #000;
+    /* Wand (left side) */
+    .wand {
+        position: absolute;
+        left: 30px;
+        top: 50%;
+        width: 2px;
+        height: 50px;
+        background: linear-gradient(180deg, rgba(210,190,255,0.25) 0%, rgba(180,150,255,0.06) 100%);
+        transform: translateY(-50%) rotate(-20deg);
+        border-radius: 1px;
+        pointer-events: none;
     }
 
-    .card-desc {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        line-height: 1.35;
+    .wand::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 5px;
+        height: 5px;
+        background: rgba(200,180,255,0.3);
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(200,180,255,0.3);
+        animation: wandGlow 2s ease-in-out infinite;
     }
 
-    /* Arrow / badge on right */
-    .card-end {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 1.25rem;
-        flex-shrink: 0;
+    @keyframes wandGlow {
+        0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(0.8); }
+        50% { opacity: 1; transform: translateX(-50%) scale(1.3); }
     }
 
-    .card-arrow {
-        color: var(--secondary);
-        transition: transform 0.15s;
+    /* Sparkles */
+    .sparkle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: rgba(200,180,255,0.5);
+        border-radius: 50%;
+        animation: sparkle 3s ease-in-out infinite;
+        pointer-events: none;
     }
 
-    .card:hover .card-arrow {
-        transform: translateX(4px);
+    .sparkle:nth-child(7) { top: 18%; left: 22%; animation-delay: 0s; }
+    .sparkle:nth-child(8) { top: 65%; right: 18%; animation-delay: 1.2s; }
+    .sparkle:nth-child(9) { top: 30%; right: 30%; animation-delay: 2.1s; }
+    .sparkle:nth-child(10) { bottom: 22%; left: 35%; animation-delay: 0.6s; }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 0; transform: scale(0.5); }
+        50% { opacity: 1; transform: scale(1.8); }
     }
 
-    .card-arrow svg {
-        width: 22px;
-        height: 22px;
+    /* =========================================================
+       CARD 2 — MANGA FORMATTER  (Manga / Comic)
+       Tilted panel with bold border, halftone, speed lines, burst
+       ========================================================= */
+
+    .card-manga {
+        background: #fff;
+        border: 4px solid #0a0a0a;
+        padding: 1.8rem 2rem;
+        transform: rotate(-1deg);
+        box-shadow: 6px 6px 0 #0a0a0a;
     }
 
-    .badge-soon {
-        font-family: var(--font-heading);
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        background: var(--surface-hover);
-        border: 2px solid var(--border-color);
-        border-radius: 4px;
-        padding: 0.2rem 0.5rem;
-        color: var(--text-muted);
-        letter-spacing: 0.5px;
-        white-space: nowrap;
+    .card-manga:hover {
+        transform: rotate(-1deg) translateY(-3px);
+        box-shadow: 8px 10px 0 #0a0a0a;
     }
 
-    /* ---- Halftone overlay for disabled cards ---- */
-    .card--disabled::after {
+    /* Halftone */
+    .card-manga::before {
         content: '';
         position: absolute;
         inset: 0;
-        background-image: radial-gradient(#000 1px, transparent 1px);
-        background-size: 4px 4px;
-        opacity: 0.2;
+        background: radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px);
+        background-size: 5px 5px;
         pointer-events: none;
     }
 
-    /* ---- Mobile ---- */
-    @media (max-width: 480px) {
-        .hero-title {
-            font-size: 3.5rem;
-        }
+    .card-manga .portal-title {
+        font-family: 'Bangers', cursive;
+        font-size: 1.8rem;
+        color: #0a0a0a;
+        letter-spacing: 2px;
+        text-align: center;
+    }
 
-        .card-icon {
-            width: 56px;
-            min-height: 72px;
-        }
+    /* Impact burst behind title */
+    .burst {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 220px;
+        height: 100px;
+        pointer-events: none;
+        z-index: 1;
+    }
 
-        .card-icon svg {
-            width: 26px;
-            height: 26px;
-        }
+    .burst-ray {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(180deg, transparent 10%, rgba(255,46,99,0.06) 50%, transparent 90%);
+        transform-origin: center center;
+    }
 
-        .card-title {
-            font-size: 1.3rem;
-        }
+    /* Panel borders — stacked manga frames */
+    .panel-stack {
+        position: absolute;
+        right: 16px;
+        bottom: 12px;
+        pointer-events: none;
+        z-index: 1;
+    }
 
-        .card-end {
-            padding: 0 0.8rem;
-        }
+    .panel-frame {
+        border: 2px solid rgba(0,0,0,0.07);
+        position: absolute;
+    }
+
+    .panel-frame:nth-child(1) { width: 36px; height: 50px; bottom: 0; right: 0; }
+    .panel-frame:nth-child(2) { width: 36px; height: 50px; bottom: 5px; right: 8px; border-color: rgba(0,0,0,0.04); }
+
+    /* Onomatopoeia accents */
+    .sfx {
+        position: absolute;
+        font-family: 'Bangers', cursive;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .sfx-1 {
+        right: 18px;
+        top: 14px;
+        font-size: 0.75rem;
+        color: rgba(255,46,99,0.12);
+        transform: rotate(8deg);
+        letter-spacing: 2px;
+    }
+
+    .sfx-2 {
+        left: 14px;
+        bottom: 12px;
+        font-size: 0.6rem;
+        color: rgba(0,0,0,0.06);
+        transform: rotate(-5deg);
+        letter-spacing: 1px;
+    }
+
+    /* Speed lines */
+    .speed-lines {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 100px;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .speed-line {
+        position: absolute;
+        left: -10px;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(0,0,0,0.07), transparent);
+        transform-origin: left center;
+    }
+
+    /* =========================================================
+       CARD 3 — LIBRARY  (Mystery / Historic)
+       Aged plaque with bookshelf, candle, magnifying glass
+       ========================================================= */
+
+    .card-mystery {
+        background: linear-gradient(145deg, #2c1810 0%, #3e2a1a 60%, #2c1810 100%);
+        border: 1px solid rgba(180,150,100,0.2);
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(20,10,0,0.45);
+        position: relative;
+        /* Plaque shape: slightly wider horizontal, subtle notched corners */
+        clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+    }
+
+    .card-mystery:hover {
+        box-shadow: 0 8px 28px rgba(20,10,0,0.55);
+    }
+
+    /* Double-border inset */
+    .mystery-inset {
+        position: absolute;
+        inset: 8px;
+        border: 1px solid rgba(180,150,100,0.08);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .card-mystery .portal-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #d4b896;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+
+    /* Mini bookshelf (right side) */
+    .mini-shelf {
+        position: absolute;
+        right: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .mini-book {
+        border-radius: 1px 2px 0 0;
+    }
+
+    /* Candle (left side) */
+    .candle {
+        position: absolute;
+        left: 28px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .candle-body {
+        width: 6px;
+        height: 22px;
+        background: linear-gradient(180deg, rgba(230,220,190,0.25) 0%, rgba(200,185,150,0.15) 100%);
+        border-radius: 1px;
+        margin: 0 auto;
+    }
+
+    .candle-wick {
+        width: 1px;
+        height: 4px;
+        background: rgba(180,150,100,0.2);
+        margin: 0 auto;
+    }
+
+    .candle-flame {
+        width: 5px;
+        height: 8px;
+        background: radial-gradient(ellipse, rgba(255,200,80,0.35) 0%, rgba(255,160,40,0.15) 50%, transparent 100%);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        margin: 0 auto;
+        animation: flicker 1.5s ease-in-out infinite alternate;
+    }
+
+    .candle-glow {
+        position: absolute;
+        left: 50%;
+        top: -8px;
+        width: 30px;
+        height: 30px;
+        background: radial-gradient(circle, rgba(255,180,60,0.06) 0%, transparent 70%);
+        transform: translateX(-50%);
+    }
+
+    @keyframes flicker {
+        0% { transform: scaleY(1) scaleX(1); opacity: 0.8; }
+        25% { transform: scaleY(1.1) scaleX(0.9); opacity: 1; }
+        75% { transform: scaleY(0.9) scaleX(1.05); opacity: 0.85; }
+        100% { transform: scaleY(1.05) scaleX(0.95); opacity: 0.95; }
+    }
+
+    /* Magnifying glass (bottom left area) */
+    .magnifier {
+        position: absolute;
+        left: 55px;
+        bottom: 14px;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .mag-lens {
+        width: 16px;
+        height: 16px;
+        border: 1px solid rgba(180,150,100,0.15);
+        border-radius: 50%;
+    }
+
+    .mag-handle {
+        width: 1px;
+        height: 10px;
+        background: rgba(180,150,100,0.12);
+        margin-left: 13px;
+        margin-top: -2px;
+        transform: rotate(40deg);
+        transform-origin: top left;
+    }
+
+    /* =========================================================
+       CARD 4 — FIRMWARE FLASHER  (Sci-fi / Space)
+       Hexagonal-ish HUD panel with circuit traces, stars, chip
+       ========================================================= */
+
+    .card-scifi {
+        background: linear-gradient(160deg, #060d1a 0%, #0c1a30 50%, #060d1a 100%);
+        border: 1px solid rgba(0,200,255,0.12);
+        padding: 2rem;
+        box-shadow: 0 4px 24px rgba(0,10,30,0.5);
+        /* Angled HUD shape */
+        clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+    }
+
+    .card-scifi:hover {
+        box-shadow: 0 8px 32px rgba(0,10,30,0.6), 0 0 40px rgba(0,200,255,0.05);
+    }
+
+    .card-scifi .portal-title {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1.2rem;
+        color: rgba(0,220,255,0.85);
+        text-shadow: 0 0 18px rgba(0,200,255,0.2);
+        text-align: center;
+        letter-spacing: 2px;
+    }
+
+    /* Circuit traces */
+    .circuit-grid {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .circuit-grid::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(0deg, transparent 49.5%, rgba(0,200,255,0.025) 49.5%, rgba(0,200,255,0.025) 50.5%, transparent 50.5%),
+            linear-gradient(90deg, transparent 49.5%, rgba(0,200,255,0.025) 49.5%, rgba(0,200,255,0.025) 50.5%, transparent 50.5%);
+        background-size: 24px 24px;
+    }
+
+    /* Trace lines (custom paths) */
+    .trace {
+        position: absolute;
+        background: rgba(0,200,255,0.08);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .trace-h { height: 1px; }
+    .trace-v { width: 1px; }
+
+    .trace-node {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        border: 1px solid rgba(0,200,255,0.15);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    /* LED status dots */
+    .led {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .led-on {
+        background: rgba(0,255,140,0.5);
+        box-shadow: 0 0 6px rgba(0,255,140,0.3);
+        animation: ledBlink 2s ease-in-out infinite;
+    }
+
+    .led-amber {
+        background: rgba(255,180,0,0.4);
+        box-shadow: 0 0 4px rgba(255,180,0,0.2);
+        animation: ledBlink 3s ease-in-out infinite;
+    }
+
+    @keyframes ledBlink {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
+    }
+
+    /* Chip outline */
+    .chip {
+        position: absolute;
+        right: 25px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        border: 1px solid rgba(0,200,255,0.1);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .chip-pin {
+        position: absolute;
+        background: rgba(0,200,255,0.08);
+    }
+
+    .chip-pin-h { width: 6px; height: 1px; }
+    .chip-pin-v { width: 1px; height: 6px; }
+
+    /* Top pins */
+    .chip-pin:nth-child(1) { top: -6px; left: 6px; }
+    .chip-pin:nth-child(2) { top: -6px; left: 14px; }
+    /* Bottom pins */
+    .chip-pin:nth-child(3) { bottom: -6px; left: 6px; }
+    .chip-pin:nth-child(4) { bottom: -6px; left: 14px; }
+    /* Left pins */
+    .chip-pin:nth-child(5) { left: -6px; top: 6px; }
+    .chip-pin:nth-child(6) { left: -6px; top: 14px; }
+    /* Right pins */
+    .chip-pin:nth-child(7) { right: -6px; top: 6px; }
+    .chip-pin:nth-child(8) { right: -6px; top: 14px; }
+
+    /* Scan line */
+    .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,200,255,0.05), transparent);
+        animation: scanMove 6s linear infinite;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    @keyframes scanMove {
+        0% { top: 0; }
+        100% { top: 100%; }
+    }
+
+    /* Stars */
+    .stars {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .star {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        background: rgba(200,220,255,0.4);
+        border-radius: 50%;
+        animation: twinkle 4s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.15; }
+        50% { opacity: 0.7; }
+    }
+
+    /* HUD corner brackets */
+    .hud-corner {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .hud-corner::before, .hud-corner::after {
+        content: '';
+        position: absolute;
+        background: rgba(0,200,255,0.12);
+    }
+
+    .hud-tl { top: 8px; left: 8px; }
+    .hud-tl::before { top: 0; left: 0; width: 12px; height: 1px; }
+    .hud-tl::after { top: 0; left: 0; width: 1px; height: 12px; }
+
+    .hud-br { bottom: 8px; right: 8px; }
+    .hud-br::before { bottom: 0; right: 0; width: 12px; height: 1px; }
+    .hud-br::after { bottom: 0; right: 0; width: 1px; height: 12px; }
+
+    /* ===== Footer ===== */
+
+    .eink-footer {
+        text-align: center;
+        margin-top: 2.5rem;
+        padding-bottom: 1rem;
+    }
+
+    .eink-footer span {
+        font-family: 'Literata', serif;
+        font-size: 0.7rem;
+        color: #999;
+        letter-spacing: 1px;
+        text-transform: uppercase;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="home-wrap">
-    <div class="hero">
-        <h1 class="hero-title"><span class="anim-pop-scale">X4 Utils</span></h1>
-        <p class="hero-sub anim-fade-slide-up delay-300">E-Ink Device Toolkit</p>
+<div class="hub-wrap">
+
+    <div class="hub-header">
+        <h1 class="hub-title">X4 Utilities</h1>
+        <p class="hub-subtitle">E-ink device toolkit</p>
     </div>
 
-    <div class="cards">
-        <!-- Manga Formatter — active -->
-        <a href="/manga-formatter/" class="card anim-card-pop delay-100">
-            <div class="card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                    <path d="M8 7h6"/>
-                    <path d="M8 11h8"/>
-                </svg>
+    <div class="cards-stack">
+
+        <!-- 1. Book Converter — Fantasy scroll with arcane circle, potion, wand -->
+        <a href="/book-converter/" class="portal-card card-fantasy anim-fade-slide-up delay-100">
+            <span class="portal-title">Book Converter</span>
+            <div class="arcane-circle"></div>
+            <div class="rune"></div>
+            <div class="rune"></div>
+            <div class="rune"></div>
+            <div class="rune"></div>
+            <div class="wand"></div>
+            <div class="potion">
+                <div class="potion-neck"></div>
+                <div class="potion-body">
+                    <div class="potion-bubble"></div>
+                    <div class="potion-bubble"></div>
+                    <div class="potion-bubble"></div>
+                </div>
             </div>
-            <div class="card-body">
-                <span class="card-title">Manga Formatter</span>
-                <span class="card-desc">Convert CBZ manga to XTC format for e-ink</span>
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+        </a>
+
+        <!-- 2. Manga Formatter — Tilted panel with burst, speed lines, SFX -->
+        <a href="/manga-formatter/" class="portal-card card-manga anim-fade-slide-up delay-200">
+            <span class="portal-title">Manga Formatter</span>
+            <div class="burst" id="burst"></div>
+            <div class="speed-lines" id="speedLines"></div>
+            <div class="panel-stack">
+                <div class="panel-frame"></div>
+                <div class="panel-frame"></div>
             </div>
-            <div class="card-end">
-                <span class="card-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 6l6 6-6 6"/>
-                    </svg>
-                </span>
+            <span class="sfx sfx-1">ZAP!</span>
+            <span class="sfx sfx-2">WHOOSH</span>
+        </a>
+
+        <!-- 3. Library — Notched plaque with candle, mini bookshelf, magnifier -->
+        <a href="/library/" class="portal-card card-mystery anim-fade-slide-up delay-300">
+            <span class="portal-title">Library</span>
+            <div class="mystery-inset"></div>
+            <div class="candle">
+                <div class="candle-glow"></div>
+                <div class="candle-flame"></div>
+                <div class="candle-wick"></div>
+                <div class="candle-body"></div>
+            </div>
+            <div class="mini-shelf" id="miniShelf"></div>
+            <div class="magnifier">
+                <div class="mag-lens"></div>
+                <div class="mag-handle"></div>
             </div>
         </a>
 
-        <!-- Book Converter — Mystery Theme -->
-        <a href="/book-converter/" class="card anim-card-pop delay-200" style="border-left: 5px solid #800000;">
-            <div class="card-icon" style="background: #2b2b2b; color: #c5a059;">
-                <!-- Sherlock Pipe Icon -->
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 11.5a3 3 0 0 1-3 3 3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3h2.5" />
-                    <path d="M12 7.5h2.5c2 0 3.5 1.5 3.5 3.5v1.5a4 4 0 0 1-4 4h-2" />
-                    <path d="M14 16.5c1 1 1 2.5 1 2.5s-1 2-4 2-5-1-5-3.5 2-3.5 5-3.5" />
-                </svg>
+        <!-- 4. Firmware Flasher — Angled HUD with chip, traces, LEDs, stars -->
+        <a href="/firmware-flasher/" class="portal-card card-scifi anim-fade-slide-up delay-400">
+            <span class="portal-title">&gt; Firmware Flasher_</span>
+            <div class="circuit-grid"></div>
+            <div class="scan-line"></div>
+            <div class="stars" id="starField"></div>
+
+            <!-- Chip -->
+            <div class="chip">
+                <div class="chip-pin chip-pin-v"></div>
+                <div class="chip-pin chip-pin-v"></div>
+                <div class="chip-pin chip-pin-v"></div>
+                <div class="chip-pin chip-pin-v"></div>
+                <div class="chip-pin chip-pin-h"></div>
+                <div class="chip-pin chip-pin-h"></div>
+                <div class="chip-pin chip-pin-h"></div>
+                <div class="chip-pin chip-pin-h"></div>
             </div>
-            <div class="card-body">
-                <span class="card-title" style="font-family: 'Georgia', serif; letter-spacing: 0;">Book Converter</span>
-                <span class="card-desc">Transform your EPUB & PDF files into readable evidence</span>
-            </div>
-            <div class="card-end">
-                <span class="card-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 6l6 6-6 6"/>
-                    </svg>
-                </span>
-            </div>
+
+            <!-- Traces -->
+            <div class="trace trace-h" style="top:20px;left:10px;width:40px"></div>
+            <div class="trace trace-v" style="top:20px;left:50px;height:25px"></div>
+            <div class="trace trace-h" style="top:45px;left:50px;width:30px"></div>
+            <div class="trace-node" style="top:18px;left:8px"></div>
+            <div class="trace-node" style="top:43px;left:78px"></div>
+
+            <div class="trace trace-h" style="bottom:18px;left:15px;width:50px"></div>
+            <div class="trace-node" style="bottom:16px;left:13px"></div>
+            <div class="trace-node" style="bottom:16px;left:63px"></div>
+
+            <!-- LEDs -->
+            <div class="led led-on" style="left:18px;top:50%"></div>
+            <div class="led led-amber" style="left:18px;top:calc(50% + 10px)"></div>
+
+            <!-- HUD brackets -->
+            <div class="hud-corner hud-tl"></div>
+            <div class="hud-corner hud-br"></div>
         </a>
 
-        <!-- Firmware Flasher — coming soon -->
-        <div class="card card--disabled anim-card-pop delay-300">
-            <div class="card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-            </div>
-            <div class="card-body">
-                <span class="card-title">Firmware Flasher</span>
-                <span class="card-desc">Flash and manage X4 device firmware</span>
-            </div>
-            <div class="card-end">
-                <span class="badge-soon">Soon</span>
-            </div>
-        </div>
     </div>
+
+    <div class="eink-footer">
+        <span>Bigme Gale X4</span>
+    </div>
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    document.body.classList.add('eink-page');
+
+    // Manga — speed lines from left
+    var lines = document.getElementById('speedLines');
+    if (lines) {
+        for (var i = 0; i < 18; i++) {
+            var l = document.createElement('div');
+            l.className = 'speed-line';
+            l.style.top = (3 + Math.random() * 94) + '%';
+            l.style.width = (30 + Math.random() * 70) + 'px';
+            l.style.transform = 'rotate(' + (-2 + Math.random() * 4) + 'deg)';
+            l.style.opacity = 0.3 + Math.random() * 0.7;
+            lines.appendChild(l);
+        }
+    }
+
+    // Manga — burst rays
+    var burst = document.getElementById('burst');
+    if (burst) {
+        for (var i = 0; i < 24; i++) {
+            var ray = document.createElement('div');
+            ray.className = 'burst-ray';
+            ray.style.transform = 'rotate(' + (i * 15) + 'deg)';
+            burst.appendChild(ray);
+        }
+    }
+
+    // Library — mini bookshelf
+    var shelf = document.getElementById('miniShelf');
+    if (shelf) {
+        var colors = ['#8b2500','#1a3a2a','#2c1e5b','#5a3020','#4a1a2e','#1c3d5a','#3a2a1a'];
+        for (var i = 0; i < 6; i++) {
+            var b = document.createElement('div');
+            b.className = 'mini-book';
+            b.style.width = (4 + Math.floor(Math.random() * 3)) + 'px';
+            b.style.height = (18 + Math.floor(Math.random() * 8)) + 'px';
+            b.style.background = colors[i % colors.length];
+            b.style.opacity = '0.25';
+            shelf.appendChild(b);
+        }
+    }
+
+    // Sci-fi — star field
+    var stars = document.getElementById('starField');
+    if (stars) {
+        for (var i = 0; i < 25; i++) {
+            var s = document.createElement('div');
+            s.className = 'star';
+            s.style.left = Math.random() * 100 + '%';
+            s.style.top = Math.random() * 100 + '%';
+            s.style.animationDelay = (Math.random() * 5) + 's';
+            s.style.animationDuration = (2 + Math.random() * 4) + 's';
+            if (Math.random() > 0.75) {
+                s.style.width = s.style.height = '2px';
+            }
+            stars.appendChild(s);
+        }
+    }
+
+    window.addEventListener('beforeunload', function() {
+        document.body.classList.remove('eink-page');
+    });
+})();
+</script>
 {% endblock %}

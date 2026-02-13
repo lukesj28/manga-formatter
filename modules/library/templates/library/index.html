@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}The Library — X4 Utilities{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('library.static', filename='style.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Dust particles -->
+<div class="dust-layer" id="dustLayer"></div>
+
+<div class="library-wrap">
+
+    <div class="library-header">
+        <h1 class="library-title">The Library</h1>
+        <p class="library-subtitle">Wherein converted volumes rest, preserved against the passage of time</p>
+    </div>
+
+    <!-- Crown molding -->
+    <div class="wall-crown"></div>
+
+    <div class="bookcase" id="bookcase">
+        <!-- Shelf rows rendered by JS -->
+    </div>
+
+    <!-- Base molding -->
+    <div class="wall-base"></div>
+
+</div>
+
+<!-- Detail modal -->
+<div class="modal-overlay" id="modal">
+    <div class="detail-card">
+        <button class="detail-close" id="modalClose">&times;</button>
+        <div class="detail-book-preview">
+            <div class="detail-book-icon" id="modalBookIcon"></div>
+            <div>
+                <div class="detail-title" id="modalTitle"></div>
+                <div class="detail-ext" id="modalExt"></div>
+            </div>
+        </div>
+        <div class="detail-divider"></div>
+        <div class="detail-meta">
+            <div class="detail-meta-row">
+                <span class="detail-meta-label">Size</span>
+                <span class="detail-meta-value" id="modalSize"></span>
+            </div>
+            <div class="detail-meta-row">
+                <span class="detail-meta-label">Modified</span>
+                <span class="detail-meta-value" id="modalDate"></span>
+            </div>
+        </div>
+        <div class="detail-actions">
+            <a class="detail-btn btn-download" id="modalDownload" href="#">Download</a>
+            <button class="detail-btn btn-delete" id="modalDelete">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    // — Apply page-level class to body for environment styling —
+    document.body.classList.add('library-page');
+
+    // — Dust motes —
+    const dustLayer = document.getElementById('dustLayer');
+    for (let i = 0; i < 20; i++) {
+        const d = document.createElement('div');
+        d.className = 'dust';
+        d.style.left = (Math.random() * 100) + '%';
+        d.style.bottom = -(Math.random() * 20) + '%';
+        d.style.animationDuration = (12 + Math.random() * 18) + 's';
+        d.style.animationDelay = (Math.random() * 15) + 's';
+        d.style.width = d.style.height = (1 + Math.random() * 1.5) + 'px';
+        d.style.opacity = 0.15 + Math.random() * 0.25;
+        dustLayer.appendChild(d);
+    }
+
+    // — DOM refs —
+    const bookcase = document.getElementById('bookcase');
+    const modal = document.getElementById('modal');
+    const modalClose = document.getElementById('modalClose');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalExt = document.getElementById('modalExt');
+    const modalSize = document.getElementById('modalSize');
+    const modalDate = document.getElementById('modalDate');
+    const modalDownload = document.getElementById('modalDownload');
+    const modalDelete = document.getElementById('modalDelete');
+    const modalBookIcon = document.getElementById('modalBookIcon');
+
+    // — Color palette: muted, leathery, historic tones —
+    const PALETTE = [
+        { bg: '#8b2500', text: '#ffd7a8', accent: '#d4a24e' },
+        { bg: '#1a3a2a', text: '#c8dcc0', accent: '#8faf7e' },
+        { bg: '#2c1e5b', text: '#c8b8e8', accent: '#9b85c4' },
+        { bg: '#1c3d5a', text: '#b8d4e8', accent: '#6fa3c7' },
+        { bg: '#5a3020', text: '#e8d0b8', accent: '#c49a6c' },
+        { bg: '#4a1a2e', text: '#e8c0d0', accent: '#b87090' },
+        { bg: '#3a3a2a', text: '#d4d0b8', accent: '#a8a080' },
+        { bg: '#1a1a2e', text: '#b8b8d8', accent: '#7878a8' },
+        { bg: '#5a1a1a', text: '#e8c0b8', accent: '#c07060' },
+        { bg: '#2a4a3a', text: '#c0d8c8', accent: '#80b090' },
+        { bg: '#4a3040', text: '#d8c0d0', accent: '#a88098' },
+        { bg: '#3a2a1a', text: '#d8c8a8', accent: '#b09868' },
+    ];
+
+    // — Deterministic hash —
+    function hashStr(str) {
+        let h = 0;
+        for (let i = 0; i < str.length; i++) {
+            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return Math.abs(h);
+    }
+
+    // — Book sizing —
+    // Height: tight range around average, slight hash-based jitter
+    // Width: loosely based on file size relative to the collection average
+
+    const AVG_HEIGHT = 152;  // px — the "normal" book
+    const HEIGHT_JITTER = 12; // px — max deviation from average
+    const MIN_WIDTH = 34;
+    const MAX_WIDTH = 52;
+    const AVG_WIDTH = 42;
+
+    function computeBookSizes(files) {
+        if (files.length === 0) return {};
+
+        // Compute average file size (in bytes)
+        const sizes = files.map(f => f.size_bytes || 0);
+        const avgSize = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+
+        const result = {};
+        files.forEach(f => {
+            const h = hashStr(f.name);
+            const color = PALETTE[h % PALETTE.length];
+
+            // Height: average +/- small jitter derived from hash
+            const heightOffset = ((h % (HEIGHT_JITTER * 2 + 1)) - HEIGHT_JITTER);
+            const height = AVG_HEIGHT + heightOffset;
+
+            // Width: distance from average file size, mapped to width range
+            // Using log scale so huge files don't dominate
+            const fileSize = f.size_bytes || 1;
+            const logRatio = Math.log2(fileSize) - Math.log2(Math.max(avgSize, 1));
+            // Clamp to [-1, 1], then map to width range
+            const clamped = Math.max(-1, Math.min(1, logRatio / 3));
+            const width = Math.round(AVG_WIDTH + clamped * (MAX_WIDTH - AVG_WIDTH));
+            const finalWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
+
+            result[f.name] = { color, height, width: finalWidth };
+        });
+
+        return result;
+    }
+
+    const BOOKS_PER_SHELF = 12;
+
+    // — Load & render —
+    function loadFiles() {
+        fetch('/library/files')
+            .then(r => r.json())
+            .then(files => render(files))
+            .catch(() => {
+                bookcase.innerHTML = '<div class="shelf-row"><span class="shelf-empty-msg">The archives could not be reached\u2026</span><div class="shelf-plank"></div></div>';
+            });
+    }
+
+    function render(files) {
+        bookcase.innerHTML = '';
+        const styles = computeBookSizes(files);
+
+        if (files.length === 0) {
+            const row = document.createElement('div');
+            row.className = 'shelf-row';
+            row.appendChild(makeUploadSlot());
+            const msg = document.createElement('span');
+            msg.className = 'shelf-empty-msg';
+            msg.textContent = 'The shelves stand empty, awaiting new volumes\u2026';
+            row.appendChild(msg);
+            row.appendChild(makePlank());
+            bookcase.appendChild(row);
+            return;
+        }
+
+        // Split into shelf rows
+        const rows = [];
+        for (let i = 0; i < files.length; i += BOOKS_PER_SHELF) {
+            rows.push(files.slice(i, i + BOOKS_PER_SHELF));
+        }
+
+        rows.forEach((group, ri) => {
+            const row = document.createElement('div');
+            row.className = 'shelf-row';
+
+            group.forEach(f => row.appendChild(makeBook(f, styles[f.name])));
+
+            // Upload slot on last row
+            if (ri === rows.length - 1) {
+                row.appendChild(makeUploadSlot());
+            }
+
+            row.appendChild(makePlank());
+            bookcase.appendChild(row);
+        });
+    }
+
+    function makePlank() {
+        const plank = document.createElement('div');
+        plank.className = 'shelf-plank';
+        return plank;
+    }
+
+    function makeBook(f, style) {
+        const book = document.createElement('div');
+        book.className = 'book';
+        book.style.width = style.width + 'px';
+        book.style.height = style.height + 'px';
+        book.style.background = 'linear-gradient(135deg, ' + style.color.bg + ' 0%, ' + lighten(style.color.bg, 15) + ' 100%)';
+        book.style.boxShadow = '2px 2px 8px rgba(0,0,0,0.4), inset 0 0 10px rgba(0,0,0,0.15)';
+
+        const dotIdx = f.name.lastIndexOf('.');
+        const displayName = dotIdx > 0 ? f.name.substring(0, dotIdx) : f.name;
+
+        book.innerHTML =
+            '<div class="book-band-top"></div>' +
+            '<div class="book-band-bottom"></div>' +
+            '<div class="book-accent top" style="background:' + style.color.accent + '"></div>' +
+            '<div class="book-accent bottom" style="background:' + style.color.accent + '"></div>' +
+            '<span class="book-spine-text" style="color:' + style.color.text + '">' + escapeHtml(displayName) + '</span>';
+
+        book.addEventListener('click', function() { openModal(f, style.color); });
+        return book;
+    }
+
+    function makeUploadSlot() {
+        const slot = document.createElement('div');
+        slot.className = 'upload-slot';
+        slot.innerHTML =
+            '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">' +
+            '<line x1="12" y1="5" x2="12" y2="19"/>' +
+            '<line x1="5" y1="12" x2="19" y2="12"/>' +
+            '</svg>';
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xtc,.zip,.epub,.pdf';
+        input.multiple = true;
+        slot.appendChild(input);
+
+        slot.addEventListener('click', function() { input.click(); });
+        input.addEventListener('change', function() {
+            Array.from(input.files).forEach(uploadFile);
+            input.value = '';
+        });
+
+        ['dragenter', 'dragover'].forEach(function(evt) {
+            slot.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); slot.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(function(evt) {
+            slot.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); slot.classList.remove('dragover'); });
+        });
+        slot.addEventListener('drop', function(e) {
+            Array.from(e.dataTransfer.files).forEach(uploadFile);
+        });
+
+        return slot;
+    }
+
+    function uploadFile(file) {
+        var fd = new FormData();
+        fd.append('file', file);
+        fetch('/library/upload', { method: 'POST', body: fd })
+            .then(function(r) { if (r.ok) loadFiles(); });
+    }
+
+    // — Modal —
+    function openModal(f, color) {
+        var ext = f.name.split('.').pop().toUpperCase();
+        var dotIdx = f.name.lastIndexOf('.');
+        var displayName = dotIdx > 0 ? f.name.substring(0, dotIdx) : f.name;
+
+        modalTitle.textContent = displayName;
+        modalExt.textContent = ext + ' file';
+        modalSize.textContent = f.size;
+        modalDate.textContent = f.modified;
+        modalDownload.href = '/library/download/' + encodeURIComponent(f.name);
+        modalBookIcon.style.background = 'linear-gradient(135deg, ' + color.bg + ' 0%, ' + lighten(color.bg, 15) + ' 100%)';
+
+        modalDelete.onclick = function() {
+            if (!confirm('Remove \u201c' + displayName + '\u201d from the library?')) return;
+            fetch('/library/delete/' + encodeURIComponent(f.name), { method: 'DELETE' })
+                .then(function(r) {
+                    if (r.ok) { closeModal(); loadFiles(); }
+                });
+        };
+
+        modal.classList.add('visible');
+    }
+
+    function closeModal() {
+        modal.classList.remove('visible');
+    }
+
+    modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    // — Utilities —
+    function lighten(hex, pct) {
+        var num = parseInt(hex.replace('#', ''), 16);
+        var r = Math.min(255, (num >> 16) + pct);
+        var g = Math.min(255, ((num >> 8) & 0xff) + pct);
+        var b = Math.min(255, (num & 0xff) + pct);
+        return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+    }
+
+    function escapeHtml(str) {
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    // — Clean up body class on navigation —
+    window.addEventListener('beforeunload', function() {
+        document.body.classList.remove('library-page');
+    });
+
+    loadFiles();
+})();
+</script>
+{% endblock %}

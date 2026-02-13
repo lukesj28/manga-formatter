@@ -1,5 +1,5 @@
 services:
-  manga-formatter:
+  x4-util-server:
     build: .
     ports:
       - "5888:5000"
@@ -7,22 +7,38 @@ services:
       - PYTHONUNBUFFERED=1
       - CALIBRE_IO_PATH=/calibre-io
     volumes:
-      - manga_tmp:/tmp
-      - ./mangas:/mangas:ro
-      - calibre_io:/calibre-io
+      - ./data/library:/library
+      - ./data/tmp:/tmp
+      - ./data/calibre-io:/calibre-io
+      - ./data/mangas:/mangas:ro
+      - ./data/firmware:/firmware:ro
     restart: unless-stopped
 
-  # --- Calibre auto-converter (user-configured) ---
-  # Watches /calibre-io/input/ for new PDFs and writes EPUBs to /calibre-io/output/.
-  # Uncomment and configure the Calibre container below:
-  #
   calibre:
-    image: linuxserver/calibre:latest
+    image: lscr.io/linuxserver/calibre:latest
+    container_name: calibre
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
     volumes:
-      - calibre_io:/calibre-io
-    # Configure Calibre to watch input/ and convert to output/
-    # See: https://manual.calibre-ebook.com/generated/en/ebook-convert.html
-
-volumes:
-  manga_tmp:
-  calibre_io:
+      - ./data/calibre-io:/calibre-io
+    shm_size: "1gb"
+    restart: unless-stopped
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      mkdir -p /calibre-io/input /calibre-io/output;
+      echo 'Watching /calibre-io/input/ for PDFs...';
+      while true; do
+        for pdf in /calibre-io/input/*.pdf; do
+          [ -f \"$$pdf\" ] || continue;
+          base=$$(basename \"$$pdf\" .pdf);
+          echo \"Converting $$pdf -> /calibre-io/output/$$base.epub\";
+          ebook-convert \"$$pdf\" \"/calibre-io/output/$$base.epub\" && rm -f \"$$pdf\";
+        done;
+        sleep 2;
+      done
+      "

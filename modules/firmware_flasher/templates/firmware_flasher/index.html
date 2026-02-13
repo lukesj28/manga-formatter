@@ -1,32 +1,129 @@
 {% extends "base.html" %}
 
-{% block title %}Firmware Flasher — Coming Soon{% endblock %}
+{% block title %}Firmware Flasher — X4 Utils{% endblock %}
 
 {% block styles %}
-<style>
-    .placeholder {
-        width: 100%;
-        max-width: 500px;
-        text-align: center;
-        margin-top: 4rem;
-    }
-    .placeholder h1 {
-        font-family: var(--font-heading);
-        font-size: 2.5rem;
-        color: var(--secondary);
-        text-shadow: 3px 3px 0 #000;
-        margin-bottom: 1rem;
-    }
-    .placeholder p {
-        color: var(--text-muted);
-        font-size: 1.1rem;
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('firmware_flasher.static', filename='style.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="placeholder">
-    <h1>Firmware Flasher</h1>
-    <p>Coming soon.</p>
+<div class="flasher-wrap">
+    
+    <!-- HEADER -->
+    <div class="terminal-header">
+        <div>
+            <h1 class="terminal-title">Firmware Flasher</h1>
+            <div class="terminal-subtitle">X4 Device Management</div>
+        </div>
+        <div style="text-align: right;">
+            <div class="data-label">Status</div>
+            <div class="data-value" style="color: var(--neon-success);">ONLINE</div>
+        </div>
+    </div>
+
+    <!-- BROWSER WARNING -->
+    <div id="browserWarning" class="warning-hud hidden">
+        <strong>Browser Not Supported</strong><br>
+        Web Serial API is required. Please use Google Chrome or Microsoft Edge.
+    </div>
+
+    <!-- MAIN DECK (FIRMWARE INFO) -->
+    <div class="main-deck">
+        <div class="hud-panel" id="firmwareSection">
+            <div class="hud-title">Firmware Info</div>
+            
+            <div class="data-grid" id="firmwareInfo">
+                <div class="data-cell">
+                    <span class="data-label">Filename</span>
+                    <span class="data-value" id="fwFilename">Loading...</span>
+                </div>
+                <div class="data-cell">
+                    <span class="data-label">Size</span>
+                    <span class="data-value" id="fwSize">---</span>
+                </div>
+                <div class="data-cell">
+                    <span class="data-label">Chip</span>
+                    <span class="data-value" id="fwChip">---</span>
+                </div>
+                <div class="data-cell">
+                    <span class="data-label">Offset</span>
+                    <span class="data-value" id="fwOffset">---</span>
+                </div>
+            </div>
+
+            <div id="firmwareError" class="hidden" style="color: var(--neon-alert); margin-top: 1rem;">
+                ⚠ Error: Firmware file not found on server.
+            </div>
+        </div>
+
+        <!-- FLASH CONTROLS (Initially Hidden) -->
+        <div class="hud-panel hidden" id="flashSection">
+            <div class="hud-title">Flash Firmware</div>
+            
+            <button class="btn-cyber" id="btnFlash">Start Flashing</button>
+            
+            <div class="progress-hud hidden" id="progressWrap">
+                <div class="progress-text" style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Progress</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="cyber-track">
+                    <div class="cyber-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <!-- Status Msg -->
+            <div class="status-msg" id="statusMsg"></div>
+        </div>
+    </div>
+
+    <!-- SIDE DECK (CONNECTION) -->
+    <div class="side-deck">
+        <div class="hud-panel" id="connectSection">
+            <div class="hud-title">Device Connection</div>
+            
+            <!-- Disconnected State -->
+            <div id="deviceDisconnected" style="text-align: center;">
+                <div class="status-indicator"></div>
+                <p style="margin: 1.5rem 0; color: var(--neon-blue); font-size: 0.8rem;">
+                    Click below to select device
+                </p>
+                <button class="btn-cyber" id="btnConnect">Connect Device</button>
+            </div>
+
+            <!-- Connected State -->
+            <div id="deviceConnected" class="hidden">
+                <div class="status-indicator connected"></div>
+                
+                <div style="margin-top: 2rem;">
+                    <div class="data-cell" style="margin-bottom: 1rem;">
+                        <span class="data-label">Chipset</span>
+                        <span class="data-value" id="deviceChip">Unknown</span>
+                    </div>
+                    <div class="data-cell">
+                        <span class="data-label">MAC Address</span>
+                        <span class="data-value" id="deviceMac">--:--:--</span>
+                    </div>
+                </div>
+
+                <button class="btn-cyber btn-disconnect" id="btnDisconnect">Disconnect</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOG DECK -->
+    <div class="log-deck">
+        <div class="hud-panel" style="height: 100%; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="hud-title" style="margin: 1rem;">Log Output</div>
+            <div class="log-terminal" id="logArea"></div>
+        </div>
+    </div>
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
+<script type="module" src="{{ url_for('firmware_flasher.static', filename='flasher.js') }}"></script>
 {% endblock %}

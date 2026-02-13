@@ -16,6 +16,7 @@ from flask import render_template, request, send_file, jsonify, Response
 
 from modules.manga_formatter import bp
 from modules.manga_formatter.converter import convert_chapters, classify_cbz_files
+from modules.library.routes import save_to_library
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +138,11 @@ def _stream_conversion(chapter_map, work_dir, output_base, manga_title, settings
 
         zip_path = os.path.join(work_dir, f"{manga_title}.zip")
         _zip_directory(root_out, zip_path, manga_title)
+
+        try:
+            save_to_library(zip_path, f"{manga_title}.zip")
+        except Exception:
+            logger.exception("Failed to save ZIP to library")
 
         if session_id not in _sessions:
             _sessions[session_id] = {}

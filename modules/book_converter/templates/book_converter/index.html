@@ -1,141 +1,115 @@
 {% extends "base.html" %}
 
-{% block title %}Case File #221B — Book Converter{% endblock %}
+{% block title %}The Arcanum — Book Converter{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('book_converter.static', filename='style.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="bc-wrap">
-    
-    <!-- Decorative Icons -->
-    <img src="{{ url_for('book_converter.static', filename='images/pipe.png') }}" class="bc-icon-deco left" alt="">
-    <img src="{{ url_for('book_converter.static', filename='images/magnifying_glass.png') }}" class="bc-icon-deco right" alt="">
+<!-- Ambient light follower -->
+<div class="ambient-light" id="ambientLight"></div>
 
-    <div class="bc-header">
-        <h1 class="bc-title">Book Converter</h1>
-        <p class="bc-subtitle">TRANSFORMING EVIDENCE INTO READABLE FORMATS</p>
+<div class="converter-wrap">
+    
+    <div class="converter-header">
+        <h1 class="converter-title" data-text="THE ARCANUM">THE ARCANUM</h1>
+        <div class="converter-subtitle">Book Converter</div>
     </div>
 
     <form id="convertForm" enctype="multipart/form-data">
-        
-        <!-- Case Evidence (Upload) -->
-        <div class="bc-card">
-            <div class="bc-card-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/>
-                    <line x1="9" y1="15" x2="12" y2="12"/>
-                    <line x1="15" y1="15" x2="12" y2="12"/>
-                </svg>
-                SUBMIT EVIDENCE (FILE UPLOAD)
-            </div>
-            <div class="bc-card-body">
-                <div class="bc-dropzone" id="dropZone">
-                    <span class="bc-dropzone-icon">📜</span>
-                    <p class="bc-dropzone-text">Drop your dossier here</p>
-                    <p class="bc-dropzone-hint">.epub or .pdf format required</p>
-                    <input type="file" id="fileInput" name="file" accept=".epub,.pdf">
-                </div>
+        <div class="grimoire-container">
+            <div class="grimoire">
+                <div class="grimoire-pages">
+                    <div class="grimoire-spine-stitching"></div>
+                    
+                    <!-- LEFT PAGE: OFFERING (INPUT) -->
+                    <div class="page-left">
+                        <div class="page-corner-decoration corner-tl"></div>
+                        <div class="page-corner-decoration corner-bl"></div>
+                        
+                        <div class="page-header">
+                            Source File
+                        </div>
+                        
+                        <div class="upload-zone" id="dropZone">
+                            <div class="upload-icon">📜</div>
+                            <div class="upload-text">Upload File</div>
+                            <div class="upload-hint">EPUB or PDF</div>
+                            <input type="file" id="fileInput" name="file" accept=".epub,.pdf">
+                        </div>
 
-                <div class="bc-file-info" id="fileInfo">
-                    <div class="bc-file-icon" id="fileIcon">???</div>
-                    <div class="bc-file-details">
-                        <div class="bc-file-name" id="fileName"></div>
-                        <div class="bc-file-size" id="fileSize"></div>
+                        <div class="file-card" id="fileInfo">
+                            <div class="file-icon-box" id="fileIcon">?</div>
+                            <div class="file-details">
+                                <div class="file-name" id="fileName"></div>
+                                <div class="file-size" id="fileSize"></div>
+                            </div>
+                            <button type="button" class="btn-remove" id="fileRemove" title="Remove File">×</button>
+                        </div>
+
+                        <!-- Feedback Area -->
+                        <div class="feedback-box box-error" id="errorBox"></div>
+                        <div class="feedback-box box-success" id="successBox">
+                            <strong>Success</strong><br>
+                            <span>The document has been converted.</span>
+                        </div>
                     </div>
-                    <button type="button" class="bc-file-remove" id="fileRemove">&times;</button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Deduction Method (Output Format) -->
-        <div class="bc-card">
-            <div class="bc-card-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="16 3 21 3 21 8"/>
-                    <line x1="4" y1="20" x2="21" y2="3"/>
-                    <polyline points="21 16 21 21 16 21"/>
-                    <line x1="15" y1="15" x2="21" y2="21"/>
-                    <line x1="4" y1="4" x2="9" y2="9"/>
-                </svg>
-                DEDUCTION METHOD (OUTPUT)
-            </div>
-            <div class="bc-card-body">
-                <div class="bc-format-group">
-                    <button type="button" class="bc-format-btn active" data-format="xtc">XTC (Preferred)</button>
-                    <button type="button" class="bc-format-btn" data-format="epub" id="epubFormatBtn" disabled>EPUB (Draft)</button>
-                </div>
-                <input type="hidden" id="outputFormat" name="output_format" value="xtc">
-            </div>
-        </div>
+                    <!-- RIGHT PAGE: RITUAL (CONTROLS) -->
+                    <div class="page-right">
+                        <div class="page-corner-decoration corner-tr"></div>
+                        <div class="page-corner-decoration corner-br"></div>
 
-        <!-- Investigation Parameters (Settings) -->
-        <details class="bc-settings" id="settingsPanel">
-            <summary>
-                <span style="font-size: 1.2rem;">🔍</span>
-                INVESTIGATION PARAMETERS
-            </summary>
-            <div class="bc-settings-grid">
-                <div class="bc-field">
-                    <label for="target_width">Width (px)</label>
-                    <input type="number" id="target_width" name="target_width" value="480" min="100" max="2000">
-                </div>
-                <div class="bc-field">
-                    <label for="target_height">Height (px)</label>
-                    <input type="number" id="target_height" name="target_height" value="800" min="100" max="2000">
-                </div>
-                <div class="bc-field">
-                    <label for="font_size">Font Size (pt)</label>
-                    <input type="number" id="font_size" name="font_size" value="28" min="8" max="72">
-                </div>
-                <div class="bc-field">
-                    <label for="margin">Margin (px)</label>
-                    <input type="number" id="margin" name="margin" value="20" min="0" max="100">
-                </div>
-                <div class="bc-field">
-                    <label for="line_height">Line Height</label>
-                    <input type="number" id="line_height" name="line_height" value="1.4" min="0.8" max="3.0" step="0.1">
-                </div>
-                <div class="bc-field">
-                    <label for="contrast">Ink Contrast <span class="bc-badge" id="contrastVal">1.2</span></label>
-                    <input type="range" id="contrast" name="contrast" min="0.5" max="3.0" step="0.1" value="1.2">
-                </div>
-                <div class="bc-field full-width">
-                    <label>Stipple Shading (Dithering)</label>
-                    <div class="bc-toggle-wrap">
-                        <input type="checkbox" id="dithering" name="dithering" checked>
-                        <label for="dithering" class="bc-toggle"></label>
-                        <span class="bc-toggle-label" id="ditherLabel">ENABLED</span>
+                        <div class="page-header">
+                            Settings
+                        </div>
+
+                        <div class="form-group">
+                            <span class="label-fancy">Final Format</span>
+                            <div class="format-toggle">
+                                <button type="button" class="toggle-btn active" data-format="xtc">XTC (E-Ink)</button>
+                                <button type="button" class="toggle-btn" data-format="epub" id="epubFormatBtn" disabled>EPUB (Reflow)</button>
+                            </div>
+                            <input type="hidden" id="outputFormat" name="output_format" value="xtc">
+                        </div>
+
+                        <div id="settingsPanel">
+                            <div class="form-group">
+                                <label class="label-fancy" for="target_width">Target Width (px)</label>
+                                <input type="number" id="target_width" name="target_width" value="480" min="100" max="2000">
+                            </div>
+                            <div class="form-group">
+                                <label class="label-fancy" for="font_size">Font Size (pt)</label>
+                                <input type="number" id="font_size" name="font_size" value="28" min="8" max="72">
+                            </div>
+                            <div class="form-group">
+                                <label class="label-fancy" for="contrast">Contrast: <span id="contrastVal">1.2</span></label>
+                                <input type="range" id="contrast" name="contrast" min="0.5" max="3.0" step="0.1" value="1.2">
+                            </div>
+                        </div>
+
+                        <!-- Hidden inputs for legacy/defaults -->
+                        <input type="hidden" name="dithering" value="true">
+                        <input type="hidden" name="margin" value="20">
+                        <input type="hidden" name="line_height" value="1.4">
+
+                        <button type="submit" class="btn-transmute" id="submitBtn" disabled>
+                            Convert
+                        </button>
+
+                        <!-- Progress / Mana Bar -->
+                        <div class="ink-progress" id="progressSection">
+                            <div class="ink-track">
+                                <div class="ink-bar" id="progressFill"></div>
+                            </div>
+                            <div class="status-text" id="statusText">Converting...</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </details>
-
-        <!-- Submit -->
-        <button type="submit" class="bc-submit" id="submitBtn" disabled>COMMENCE INVESTIGATION</button>
+        </div>
     </form>
-
-    <!-- Progress -->
-    <div class="bc-progress" id="progressSection">
-        <div class="bc-progress-track">
-            <div class="bc-progress-fill" id="progressFill"></div>
-            <div class="bc-progress-text" id="progressPercent">0%</div>
-        </div>
-        <div class="bc-status" id="statusText"></div>
-    </div>
-
-    <!-- Error -->
-    <div class="bc-error" id="errorBox"></div>
-
-    <!-- Success -->
-    <div class="bc-success" id="successBox">
-        <span class="bc-success-icon">✓</span>
-        <span class="bc-success-text">CASE SOLVED!</span>
-        <p style="margin-top:0.5rem; opacity:0.8;">The evidence has been processed.</p>
-    </div>
 </div>
 {% endblock %}
 
@@ -149,43 +123,55 @@
     const fileName = document.getElementById('fileName');
     const fileSize = document.getElementById('fileSize');
     const fileRemove = document.getElementById('fileRemove');
-    const epubFormatBtn = document.getElementById('epubFormatBtn');
-    const outputFormat = document.getElementById('outputFormat');
-    const settingsPanel = document.getElementById('settingsPanel');
     const submitBtn = document.getElementById('submitBtn');
     const form = document.getElementById('convertForm');
     const progressSection = document.getElementById('progressSection');
     const progressFill = document.getElementById('progressFill');
-    const progressPercent = document.getElementById('progressPercent');
     const statusText = document.getElementById('statusText');
     const errorBox = document.getElementById('errorBox');
     const successBox = document.getElementById('successBox');
     const contrastSlider = document.getElementById('contrast');
     const contrastVal = document.getElementById('contrastVal');
-    const ditherCheckbox = document.getElementById('dithering');
-    const ditherLabel = document.getElementById('ditherLabel');
-    const formatBtns = document.querySelectorAll('.bc-format-btn');
+    const ambientLight = document.getElementById('ambientLight');
+    
+    // Format Toggles
+    const outputFormat = document.getElementById('outputFormat');
+    const epubFormatBtn = document.getElementById('epubFormatBtn');
+    const formatBtns = document.querySelectorAll('.toggle-btn');
+    const settingsPanel = document.getElementById('settingsPanel');
 
     let selectedFile = null;
 
-    // -- Contrast slider display
+    // -- Interactive Ambient Light
+    document.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth) * 100;
+        const y = (e.clientY / window.innerHeight) * 100;
+        ambientLight.style.setProperty('--mouse-x', x + '%');
+        ambientLight.style.setProperty('--mouse-y', y + '%');
+    });
+
+    // -- Contrast slider
     contrastSlider.addEventListener('input', () => {
         contrastVal.textContent = contrastSlider.value;
     });
 
-    // -- Dithering toggle label
-    ditherCheckbox.addEventListener('change', () => {
-        ditherLabel.textContent = ditherCheckbox.checked ? 'ENABLED' : 'DISABLED';
-    });
-
-    // -- Format buttons
+    // -- Format Selection
     formatBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.disabled) return;
             formatBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            outputFormat.value = btn.dataset.format;
-            settingsPanel.style.display = btn.dataset.format === 'epub' ? 'none' : '';
+            const fmt = btn.dataset.format;
+            outputFormat.value = fmt;
+            
+            // Toggle visibility of XTC-only settings
+            if (fmt === 'epub') {
+                settingsPanel.style.opacity = '0.5';
+                settingsPanel.style.pointerEvents = 'none'; // Disable inputs visually
+            } else {
+                settingsPanel.style.opacity = '1';
+                settingsPanel.style.pointerEvents = 'auto';
+            }
         });
     });
 
@@ -217,50 +203,44 @@
         }
     });
 
-    fileRemove.addEventListener('click', () => {
+    fileRemove.addEventListener('click', (e) => {
+        e.stopPropagation();
         clearFile();
+    });
+    
+    dropZone.addEventListener('click', (e) => {
+        if (e.target !== fileInput && e.target !== fileRemove) {
+            fileInput.click();
+        }
     });
 
     function handleFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
         if (ext !== 'epub' && ext !== 'pdf') {
-            showError('Invalid evidence. Please upload an EPUB or PDF file.');
+            showError('The spirits reject this form. Only EPUB or PDF are accepted.');
             return;
         }
 
         selectedFile = file;
 
-        // Update file info display
+        // Update UI
         fileName.textContent = file.name;
         fileSize.textContent = formatSize(file.size);
         fileIcon.textContent = ext.toUpperCase();
-        fileIcon.className = 'bc-file-icon ' + ext;
         fileInfo.classList.add('visible');
-
-        // Update format options
+        
         if (ext === 'pdf') {
             epubFormatBtn.disabled = false;
-            epubFormatBtn.textContent = 'EPUB (Draft)';
         } else {
             epubFormatBtn.disabled = true;
-            epubFormatBtn.textContent = 'EPUB (N/A)';
-            // Force XTC if currently on EPUB
             if (outputFormat.value === 'epub') {
-                formatBtns.forEach(b => b.classList.remove('active'));
-                document.querySelector('[data-format="xtc"]').classList.add('active');
-                outputFormat.value = 'xtc';
-                settingsPanel.style.display = '';
+                 document.querySelector('[data-format="xtc"]').click();
             }
         }
 
         submitBtn.disabled = false;
         hideError();
         successBox.classList.remove('visible');
-
-        // Create a new DataTransfer to set the input files programmatically
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
     }
 
     function clearFile() {
@@ -270,10 +250,7 @@
         submitBtn.disabled = true;
         epubFormatBtn.disabled = true;
         if (outputFormat.value === 'epub') {
-            formatBtns.forEach(b => b.classList.remove('active'));
-            document.querySelector('[data-format="xtc"]').classList.add('active');
-            outputFormat.value = 'xtc';
-            settingsPanel.style.display = '';
+             document.querySelector('[data-format="xtc"]').click();
         }
     }
 
@@ -297,15 +274,9 @@
         submitBtn.disabled = true;
         progressSection.classList.add('visible');
         progressFill.style.width = '0%';
-        progressPercent.textContent = '0%';
-        statusText.textContent = 'Initializing Analysis...';
+        statusText.textContent = 'Summoning the energies...';
 
         const formData = new FormData(form);
-
-        // Set dithering value explicitly
-        formData.set('dithering', ditherCheckbox.checked ? 'true' : 'false');
-
-        const fmt = outputFormat.value;
 
         try {
             const resp = await fetch('/book-converter/convert', {
@@ -315,13 +286,12 @@
 
             if (!resp.ok) {
                 const err = await resp.json();
-                throw new Error(err.error || 'Investigation failed');
+                throw new Error(err.error || 'The spell misfired.');
             }
 
             const contentType = resp.headers.get('content-type') || '';
 
             if (contentType.includes('application/x-ndjson')) {
-                // Streaming NDJSON
                 const reader = resp.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
@@ -340,13 +310,8 @@
                         handleEvent(event);
                     }
                 }
-
-                // Process remaining buffer
-                if (buffer.trim()) {
-                    handleEvent(JSON.parse(buffer));
-                }
+                if (buffer.trim()) handleEvent(JSON.parse(buffer));
             } else {
-                // JSON response (e.g., PDF→EPUB direct)
                 const data = await resp.json();
                 handleEvent(data);
             }
@@ -362,19 +327,16 @@
         if (event.type === 'progress') {
             const pct = event.total > 0 ? Math.round((event.current / event.total) * 100) : 0;
             progressFill.style.width = pct + '%';
-            progressPercent.textContent = pct + '%';
             if (event.message) statusText.textContent = event.message;
         } else if (event.type === 'done') {
             progressFill.style.width = '100%';
-            progressPercent.textContent = '100%';
-            statusText.textContent = 'Done!';
+            statusText.textContent = 'Transmutation Complete!';
             successBox.classList.add('visible');
 
-            // Auto-download
             if (event.download_url) {
                 const a = document.createElement('a');
                 a.href = event.download_url;
-                a.download = event.filename || 'case_file_closed';
+                a.download = event.filename || 'transmuted_tome';
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -382,7 +344,7 @@
 
             setTimeout(() => {
                 progressSection.classList.remove('visible');
-            }, 3000);
+            }, 4000);
         } else if (event.type === 'error') {
             showError(event.message);
             progressSection.classList.remove('visible');

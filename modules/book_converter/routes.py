@@ -12,6 +12,7 @@ import logging
 from flask import render_template, request, send_file, jsonify, Response
 
 from modules.book_converter import bp
+from modules.library.routes import save_to_library
 from modules.book_converter.converter import (
     parse_epub,
     render_book,
@@ -79,6 +80,11 @@ def _stream_epub_to_xtc(epub_path, work_dir, settings, session_id):
                 size = (settings.get("target_width", 480), settings.get("target_height", 800))
                 build_book_xtc(pages, out_path, metadata, chapters, size)
 
+                try:
+                    save_to_library(out_path, out_filename)
+                except Exception:
+                    logger.exception("Failed to save XTC to library")
+
                 # Save session metadata to filesystem (shared across workers)
                 _save_session_metadata(session_id, {
                     "file_path": out_path,
@@ -141,6 +147,11 @@ def convert():
                     # Copy to work_dir for serving
                     local_epub = os.path.join(work_dir, epub_filename)
                     shutil.copy2(epub_path, local_epub)
+
+                    try:
+                        save_to_library(local_epub, epub_filename)
+                    except Exception:
+                        logger.exception("Failed to save EPUB to library")
 
                     # Save metadata
                     _save_session_metadata(session_id, {

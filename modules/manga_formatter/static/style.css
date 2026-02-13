@@ -3,6 +3,25 @@
    Module-specific styles (extends base.css)
    ================================================ */
 
+:root {
+    /* Preserving Comic Theme Variables just for this module */
+    --bg: #121212;
+    --dot-color: #2a2a2a;
+    --surface: #1e1e1e;
+    --surface-hover: #252525;
+    --border-color: #000000;
+    --border-width: 3px;
+    --accent: #ff2e63;
+    --accent-hover: #ff477e;
+    --secondary: #08d9d6;
+    --text: #ffffff;
+    --text-muted: #aaaaaa;
+    --shadow-offset: 4px;
+    --font-heading: 'Bangers', cursive;
+    --font-body: 'Outfit', sans-serif;
+    --radius: 8px;
+}
+
 .container {
     width: 100%;
     max-width: 600px;
