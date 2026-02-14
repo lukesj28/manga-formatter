@@ -15,6 +15,15 @@
     <div class="library-header">
         <h1 class="library-title">The Library</h1>
         <p class="library-subtitle">Wherein converted volumes rest, preserved against the passage of time</p>
+        
+        <!-- Search controls -->
+        <div class="library-search-container">
+            <input type="text" id="searchInput" class="library-search-input" placeholder="Search archives..." autocomplete="off">
+            <label class="library-search-toggle">
+                <input type="checkbox" id="searchHideNonMatches">
+                <span>Hide non-matching</span>
+            </label>
+        </div>
     </div>
 
     <!-- Crown molding -->
@@ -90,6 +99,40 @@
     const modalDownload = document.getElementById('modalDownload');
     const modalDelete = document.getElementById('modalDelete');
     const modalBookIcon = document.getElementById('modalBookIcon');
+    const searchInput = document.getElementById('searchInput');
+    const searchHideNonMatches = document.getElementById('searchHideNonMatches');
+
+    // — Search Logic —
+    function filterBooks() {
+        const query = searchInput.value.toLowerCase();
+        const hideNonMatches = searchHideNonMatches.checked;
+        const books = document.querySelectorAll('.book');
+
+        books.forEach(book => {
+            const filename = book.dataset.filename.toLowerCase();
+            const isMatch = query.length > 0 && filename.includes(query);
+
+            if (query.length === 0) {
+                // Return to neutral state
+                book.classList.remove('search-match', 'search-dimmed', 'search-hidden');
+            } else if (isMatch) {
+                book.classList.add('search-match');
+                book.classList.remove('search-dimmed', 'search-hidden');
+            } else {
+                book.classList.remove('search-match');
+                if (hideNonMatches) {
+                    book.classList.add('search-hidden');
+                    book.classList.remove('search-dimmed');
+                } else {
+                    book.classList.add('search-dimmed');
+                    book.classList.remove('search-hidden');
+                }
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', filterBooks);
+    searchHideNonMatches.addEventListener('change', filterBooks);
 
     // — Color palette: muted, leathery, historic tones —
     const PALETTE = [
@@ -206,6 +249,9 @@
             row.appendChild(makePlank());
             bookcase.appendChild(row);
         });
+        
+        // Re-apply search filter if one exists
+        filterBooks();
     }
 
     function makePlank() {
@@ -217,6 +263,7 @@
     function makeBook(f, style) {
         const book = document.createElement('div');
         book.className = 'book';
+        book.dataset.filename = f.name; // Store filename for search
         book.style.width = style.width + 'px';
         book.style.height = style.height + 'px';
         book.style.background = 'linear-gradient(135deg, ' + style.color.bg + ' 0%, ' + lighten(style.color.bg, 15) + ' 100%)';
