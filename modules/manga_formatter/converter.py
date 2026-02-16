@@ -322,21 +322,40 @@ def convert_chapter(cbz_path, ch_num, root, settings):
             build_xtc(splits, str(zoom_dir / fname), force_size)
 
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 def convert_chapters(chapter_map, output_dir, manga_title, settings=None):
     root = Path(output_dir) / manga_title
     root.mkdir(parents=True, exist_ok=True)
 
     total = len(chapter_map)
-    for idx, (ch_num, cbz_path) in enumerate(sorted(chapter_map.items()), start=1):
-        fname = os.path.basename(cbz_path)
-        yield {
-            "current": idx,
-            "total": total,
-            "message": f"Processing chapter {ch_num}...",
-            "filename": fname
-        }
+    futures = {}
 
-        convert_chapter(cbz_path, ch_num, root, settings)
+    with ProcessPoolExecutor() as executor:
+        for ch_num, cbz_path in chapter_map.items():
+            future = executor.submit(convert_chapter, cbz_path, ch_num, root, settings)
+            futures[future] = (ch_num, os.path.basename(cbz_path))
+
+        completed_count = 0
+        for future in as_completed(futures):
+            completed_count += 1
+            ch_num, fname = futures[future]
+            try:
+                future.result()
+                yield {
+                    "current": completed_count,
+                    "total": total,
+                    "message": f"Finished chapter {ch_num}",
+                    "filename": fname
+                }
+            except Exception as e:
+                print(f"Error converting chapter {ch_num}: {e}")
+                yield {
+                    "current": completed_count,
+                    "total": total,
+                    "message": f"Error in chapter {ch_num}: {str(e)}",
+                    "filename": fname
+                }
 
     yield {
         "current": total,

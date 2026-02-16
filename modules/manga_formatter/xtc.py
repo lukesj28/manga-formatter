@@ -9,17 +9,11 @@ def _png_to_xtg_bytes(img: Image.Image, force_size=(480, 800), threshold=200):
 
     w, h = img.size
     gray = img.convert("L")
-    row_bytes = (w + 7) // 8
-    data = bytearray(row_bytes * h)
+    
+    table = [0 if i < threshold else 255 for i in range(256)]
+    bw = gray.point(table, mode='1')
 
-    pixels = gray.load()
-    for y in range(h):
-        for x in range(w):
-            bit = 1 if pixels[x, y] >= threshold else 0
-            byte_index = y * row_bytes + (x // 8)
-            bit_index = 7 - (x % 8)
-            if bit:
-                data[byte_index] |= 1 << bit_index
+    data = bw.tobytes()
 
     md5digest = hashlib.md5(data).digest()[:8]
     data_size = len(data)
